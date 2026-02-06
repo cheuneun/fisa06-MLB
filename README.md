@@ -1,3 +1,3 @@
-# 에러 발생
+# ⚠️ 데이터 업데이트 실패
 
-오류 발생: Expecting value: line 1 column 1 (char 0)
+사유: API 서버 응답 에러 (상태 코드: 404)
