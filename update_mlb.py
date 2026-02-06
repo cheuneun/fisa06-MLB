@@ -1,45 +1,52 @@
-#from pybaseball import standings
+import requests
+import os
 from datetime import datetime
-import pandas as pd
 
+# GitHub Secrets에서 키를 가져옵니다. (없으면 테스트용 '1' 사용)
+API_KEY = os.getenv("THESPORTSDB_API_KEY", "1")
+API_BASE_URL = f"https://www.thesportsdb.com/api/v1/json/{API_KEY}"
+MLB_LEAGUE_ID = "4424" 
 README_PATH = "README.md"
 
-def get_mlb_standings():
+def get_mlb_teams():
+    url = f"{API_BASE_URL}/lookup_all_teams.php?id={MLB_LEAGUE_ID}"
     try:
-        # 2025년 전체 순위 데이터 가져오기 (리스트 형태로 반환됨)
-        # [AL East, AL Central, AL West, NL East, NL Central, NL West 순서]
-        all_standings = standings(2025)
-        
-        # 아메리칸 리그 동부지구 (AL East) 선택
-        al_east = all_standings[0]
+        response = requests.get(url)
+        data = response.json()
+        teams = data.get("teams", [])
         
         now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        team_rows = ""
         
-        rows = ""
-        for _, row in al_east.iterrows():
-            # 팀명, 승, 패, 승률 순으로 표 작성
-            rows += f"| {row['Tm']} | {row['W']} | {row['L']} | {row['W-L%']} |\n"
+        # 15개 팀의 로고와 정보를 가져옴
+        for team in teams[:15]:
+            name = team.get("strTeam")
+            logo = team.get("strTeamBadge")
+            stadium = team.get("strStadium")
+            location = team.get("strLocation")
+            
+            # 표 형식 (이미지 포함)
+            team_rows += f"| ![{name}]({logo}/preview) | **{name}** | {location} | {stadium} |\n"
             
         content = f"""
-# ⚾️ MLB AL East Live Standings
+# ⚾️ MLB Team Dashboard
 
-이 대시보드는 `pybaseball` 라이브러리와 GitHub Actions를 사용하여 MLB 순위를 자동으로 업데이트합니다.
+GitHub Actions로 매일 업데이트되는 MLB 팀 대시보드입니다.
 
-## 📊 American League East 순위
-| 팀명 | 승 | 패 | 승률 |
-| :--- | :--- | :--- | :--- |
-{rows}
+| 로고 | 팀명 | 연고지 | 홈구장 |
+| :---: | :--- | :--- | :--- |
+{team_rows}
 
 ---
 ⏳ **최종 업데이트:** {now} (KST)  
-*데이터 출처: Baseball-Reference via pybaseball*
+*데이터 출처: [TheSportsDB](https://www.thesportsdb.com/)*
 """
         with open(README_PATH, "w", encoding="utf-8") as f:
             f.write(content)
-        print("MLB 순위 업데이트 완료!")
+        print("성공적으로 README를 업데이트했습니다!")
 
     except Exception as e:
-        print(f"에러 발생: {e}")
+        print(f"오류 발생: {e}")
 
 if __name__ == "__main__":
-    get_mlb_standings()
+    get_mlb_teams()
