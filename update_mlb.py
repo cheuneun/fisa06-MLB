@@ -1,4 +1,4 @@
-from pybaseball import standings
+#from pybaseball import standings
 from datetime import datetime
 import pandas as pd
 
