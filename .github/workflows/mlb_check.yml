@@ -2,10 +2,10 @@ name: MLB Official Update
 
 on:
   schedule:
-    - cron: '0 0 * * *' # 매일 정오(UTC 00:00)에 실행
+    - cron: '0 0 * * *' # 매일 한국 시간 오전 9시(UTC 00:00)에 실행
   push:
     branches: [ "main" ]
-  workflow_dispatch:
+  workflow_dispatch: # 수동으로도 실행 가능하게 설정
 
 jobs:
   build:
@@ -24,7 +24,6 @@ jobs:
 
       - name: Run MLB script
         env:
-          # GitHub Secrets에 등록한 이름을 여기에 적어줍니다.
           THESPORTSDB_API_KEY: ${{ secrets.THESPORTSDB_API_KEY }}
         run: python update_mlb.py
 
@@ -32,6 +31,18 @@ jobs:
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          
+          # 에러 방지: 만약 파이썬 스크립트가 README.md를 못 만들었을 경우 빈 파일 생성
+          if [ ! -f README.md ]; then
+            touch README.md
+          fi
+          
           git add README.md
-          git commit -m "docs: update MLB data with official API key" || echo "No changes"
-          git push
+          
+          # 변경사항이 있을 때만 커밋 (No changes 에러 방지)
+          if ! git diff --cached --quiet; then
+            git commit -m "docs: update MLB data with official API key"
+            git push
+          else
+            echo "No changes to commit, skipping push."
+          fi
